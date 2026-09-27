@@ -1,0 +1,27 @@
+# Java compilado
+*.class
+bin/
+out/
+target/
+
+# Credenciais e variáveis locais
+.env
+.env.*
+database.properties
+credentials.properties
+application-local.properties
+
+# VS Code
+.vscode/
+
+# IntelliJ
+.idea/
+*.iml
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Arquivos temporários
+*.log
+*.tmp
