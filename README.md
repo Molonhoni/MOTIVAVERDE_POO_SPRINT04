@@ -1,4 +1,10 @@
-# Motiva Verde - Sprint 3
+# Motiva Verde — Sprint 4
+
+API REST desenvolvida para a Sprint 4 do Challenge Motiva Verde, com o objetivo de migrar o sistema construído anteriormente com JDBC puro para uma arquitetura baseada em **Spring Boot, Spring Data JPA e REST**.
+
+A aplicação reaproveita o banco Oracle e as tabelas criadas na Sprint 3, substituindo o acesso manual com `Connection`, `PreparedStatement` e `ResultSet` pelo uso de entidades JPA e interfaces `JpaRepository`.
+
+---
 
 ## Integrantes
 
@@ -10,1240 +16,760 @@
 | Pedro Del Neri Correia | 562168 |
 | Vitor Limeira dos Santos | 565280 |
 
----
 
-## Sobre o projeto
-
-O Motiva Verde é uma solução voltada ao gerenciamento e à priorização de intervenções de manutenção da vegetação em trechos rodoviários.
-
-O sistema utiliza informações como:
-
-- quilômetro do trecho;
-- altura da vegetação;
-- condição de crescimento;
-- equipe responsável;
-- monitoramento por sensores IoT;
-- intervenções operacionais;
-- prioridade da intervenção.
-
-As prioridades utilizadas pelo sistema são:
-
-- `BAIXA`
-- `MODERADA`
-- `ALTA`
-- `URGENTE`
-
----
-
-## Novidades da Sprint 3
-
-Nesta Sprint foram implementados:
-
-- Persistência de dados com Oracle Database;
-- Conexão com banco utilizando JDBC;
-- Uso do Oracle JDBC Driver (`ojdbc17.jar`);
-- Padrão DAO para acesso aos dados;
-- CRUD completo das principais entidades;
-- Scripts SQL para criação das tabelas;
-- Script SQL para carga de dados de teste;
-- Persistência do histórico de relatórios;
-- Integração entre o Motor de Prioridade e o banco de dados;
-- Carregamento dos trechos diretamente do Oracle;
-- Uso de `PreparedStatement`;
-- Uso de `Record` para representar registros retornados pelo banco;
-- Tratamento de exceções relacionadas ao banco de dados.
-
----
-
-## Estrutura do projeto
-
-```text
-MOTIVAVERDE_POO_SPRINT03/
-├── lib/
-│   └── ojdbc17.jar
-│
-├── sql/
-│   ├── script-criacao.sql
-│   └── script-dados.sql
-│
-├── src/
-│   └── br/com/motivaverde/
-│       ├── dao/
-│       │   ├── EquipeManutencaoDAO.java
-│       │   ├── IntervencaoOperacionalDAO.java
-│       │   ├── RelatorioPrioridadeDAO.java
-│       │   └── TrechoRodoviaDAO.java
-│       │
-│       ├── db/
-│       │   └── ConexaoBD.java
-│       │
-│       ├── interfaces/
-│       │
-│       ├── intervencao/
-│       │
-│       ├── main/
-│       │   └── Main.java
-│       │
-│       ├── model/
-│       │
-│       └── service/
-│           ├── GeradorRelatorio.java
-│           └── MotorPrioridade.java
-│
-├── .gitignore
-└── README.md
-```
-
----
-
-## Banco de dados
-
-O projeto utiliza **Oracle Database**.
-
-### Configuração
-
-```text
-Host: oracle.fiap.com.br
-Porta: 1521
-SID: ORCL
-```
-
-As credenciais não são armazenadas diretamente no código-fonte.
-
-O projeto utiliza as seguintes variáveis de ambiente:
-
-```text
-ORACLE_USER
-ORACLE_PASSWORD
-```
-
-### Configuração das variáveis no PowerShell
-
-```powershell
-$env:ORACLE_USER="SEU_USUARIO"
-$env:ORACLE_PASSWORD="SUA_SENHA"
-```
-
----
-
-## Conexão JDBC
-
-A conexão com o Oracle é realizada pela classe:
-
-```text
-ConexaoBD.java
-```
-
-O projeto utiliza o driver:
-
-```text
-ojdbc17.jar
-```
-
-armazenado dentro da pasta:
-
-```text
-lib/
-```
-
-A classe `ConexaoBD` utiliza o padrão Singleton para manter uma instância centralizada da conexão com o banco.
-
----
-
-## Scripts SQL
-
-### script-criacao.sql
-
-O arquivo:
-
-```text
-sql/script-criacao.sql
-```
-
-é responsável pela criação das tabelas utilizadas pela aplicação:
-
-```text
-TB_EQUIPE_MANUTENCAO
-TB_TRECHO_RODOVIA
-TB_INTERVENCAO_OPERACIONAL
-TB_RELATORIO_PRIORIDADE
-```
-
-As tabelas utilizam:
-
-- chaves primárias;
-- chaves estrangeiras;
-- constraints;
-- campos `IDENTITY`;
-- valores padrão;
-- relacionamentos entre as entidades.
-
-### script-dados.sql
-
-O arquivo:
-
-```text
-sql/script-dados.sql
-```
-
-é responsável pela carga de dados utilizados para testes da aplicação.
-
-O script também realiza a limpeza dos dados de teste anteriores antes de inserir uma nova carga, evitando duplicidades.
-
----
-
-## Tabelas
-
-### TB_EQUIPE_MANUTENCAO
-
-Armazena as equipes responsáveis pelas atividades de manutenção.
-
-Principais informações:
-
-```text
-ID_EQUIPE
-NOME
-ESPECIALIDADE
-```
-
----
-
-### TB_TRECHO_RODOVIA
-
-Armazena os trechos monitorados pelo sistema.
-
-Principais informações:
-
-```text
-ID_TRECHO
-QUILOMETRO
-ALTURA_VEGETACAO
-CONDICAO_CRESCIMENTO
-ID_EQUIPE
-TIPO_TRECHO
-CODIGO_SENSOR
-```
-
-O campo `TIPO_TRECHO` permite diferenciar trechos comuns de trechos monitorados via IoT.
-
-Exemplos:
-
-```text
-RODOVIA
-MONITORADO
-```
-
----
-
-### TB_INTERVENCAO_OPERACIONAL
-
-Armazena o histórico das intervenções realizadas.
-
-Os tipos de intervenção utilizados pelo sistema são:
-
-```text
-ROCADA_MECANIZADA
-PULVERIZACAO
-```
-
-Também são armazenadas informações como:
-
-```text
-DATA_EXECUCAO
-ALTURA_ANTES
-ALTURA_DEPOIS
-```
-
----
-
-### TB_RELATORIO_PRIORIDADE
-
-Armazena o histórico dos relatórios gerados pelo sistema.
-
-Cada relatório registra a quantidade de trechos classificados como:
-
-```text
-BAIXA
-MODERADA
-ALTA
-URGENTE
-```
-
-Também é armazenado um resumo da análise.
-
----
-
-## Padrão DAO
-
-A Sprint 3 utiliza o padrão **DAO - Data Access Object** para separar a lógica de persistência da lógica da aplicação.
-
-Foram implementados os seguintes DAOs:
-
-```text
-EquipeManutencaoDAO
-TrechoRodoviaDAO
-IntervencaoOperacionalDAO
-RelatorioPrioridadeDAO
-```
-
-Todos seguem o padrão CRUD solicitado.
-
----
-
-## EquipeManutencaoDAO
-
-Responsável pelas operações relacionadas às equipes de manutenção.
-
-Métodos implementados:
-
-```text
-inserir()
-buscarPorId()
-listarTodas()
-atualizar()
-deletar()
-```
-
----
-
-## TrechoRodoviaDAO
-
-Responsável pela persistência dos trechos rodoviários.
-
-Métodos implementados:
-
-```text
-inserir()
-buscarPorId()
-listarTodas()
-atualizar()
-deletar()
-```
-
-O DAO também suporta os dados específicos de um trecho monitorado, como:
-
-```text
-TIPO_TRECHO
-CODIGO_SENSOR
-```
-
----
-
-## IntervencaoOperacionalDAO
-
-Responsável pela persistência das intervenções operacionais.
-
-Métodos implementados:
-
-```text
-inserir()
-buscarPorId()
-listarTodas()
-atualizar()
-deletar()
-```
-
-As intervenções utilizadas no projeto são:
-
-```text
-RocadaMecanizada
-Pulverizacao
-```
-
----
-
-## RelatorioPrioridadeDAO
-
-Responsável pelo histórico dos relatórios de prioridade.
-
-Métodos implementados:
-
-```text
-inserir()
-buscarPorId()
-listarTodas()
-atualizar()
-deletar()
-salvarRelatorio()
-```
-
-O método:
-
-```text
-salvarRelatorio()
-```
-
-é utilizado pelo `GeradorRelatorio` para persistir automaticamente o resultado de uma análise.
-
----
-
-## PreparedStatement
-
-Todas as operações que recebem parâmetros utilizam `PreparedStatement`.
-
-Exemplo conceitual:
-
-```java
-String sql = "SELECT * FROM TB_EQUIPE_MANUTENCAO WHERE ID_EQUIPE = ?";
-
-PreparedStatement stmt = conn.prepareStatement(sql);
-
-stmt.setLong(1, id);
-```
-
-Dessa forma, os valores não são concatenados diretamente às consultas SQL.
-
----
-
-## Records
-
-Os DAOs utilizam `Record` para representar registros retornados pelo banco de dados.
-
-Exemplos:
-
-```text
-EquipeRegistro
-TrechoRegistro
-IntervencaoRegistro
-RelatorioRegistro
-```
-
-Esses objetos representam os dados persistidos no Oracle durante as operações dos DAOs.
-
----
-
-## Motor de Prioridade
-
-A classe:
-
-```text
-MotorPrioridade.java
-```
-
-mantém a lógica de análise desenvolvida nas Sprints anteriores.
-
-O motor analisa cada trecho e determina sua prioridade:
-
-```text
-BAIXA
-MODERADA
-ALTA
-URGENTE
-```
-
-Trechos que implementam monitoramento via IoT podem atualizar seus dados antes da classificação.
-
-Dependendo da situação, o sistema também pode indicar intervenções como:
-
-```text
-Roçada Mecanizada
-Pulverização
-```
-
----
-
-## Gerador de Relatório
-
-A classe:
-
-```text
-GeradorRelatorio.java
-```
-
-é responsável por integrar o Motor de Prioridade ao banco de dados.
-
-O fluxo ocorre da seguinte maneira:
-
-```text
-Trechos
-   ↓
-MotorPrioridade
-   ↓
-Classificação das prioridades
-   ↓
-ResultadoPrioridades
-   ↓
-GeradorRelatorio
-   ↓
-RelatorioPrioridadeDAO
-   ↓
-Oracle Database
-```
-
-Dessa forma, o relatório continua sendo apresentado no console, mas também passa a possuir um histórico persistente no banco de dados.
-
----
-
-## Carregamento dos trechos
-
-Nas Sprints anteriores, os trechos eram instanciados diretamente dentro do código Java.
-
-Na Sprint 3, eles passam a ser carregados através do Oracle.
-
-O fluxo é:
-
-```text
-Oracle Database
-       ↓
-TrechoRodoviaDAO
-       ↓
-TrechoRegistro
-       ↓
-TrechoRodovia / TrechoMonitorado
-       ↓
-MotorPrioridade
-```
-
-Assim, o sistema utiliza dados persistidos em vez de depender apenas de objetos criados diretamente no código.
-
----
-
-## Main
-
-A classe principal está localizada em:
-
-```text
-src/br/com/motivaverde/main/Main.java
-```
-
-Durante a execução, o sistema demonstra:
-
-1. conexão com o Oracle;
-2. CRUD de equipes de manutenção;
-3. CRUD de trechos rodoviários;
-4. CRUD de intervenções operacionais;
-5. CRUD de relatórios;
-6. carregamento dos trechos persistidos;
-7. geração do relatório de prioridade;
-8. persistência automática do relatório;
-9. consulta ao histórico;
-10. encerramento da conexão com o banco.
-
-Os registros temporários utilizados na demonstração dos CRUDs são removidos ao final dos testes.
-
----
-
-## Como executar
-
-### 1. Criar as tabelas
-
-Execute no Oracle:
-
-```text
-sql/script-criacao.sql
-```
-
----
-
-### 2. Carregar os dados de teste
-
-Depois execute:
-
-```text
-sql/script-dados.sql
-```
-
----
-
-### 3. Configurar as credenciais
-
-No PowerShell:
-
-```powershell
-$env:ORACLE_USER="SEU_USUARIO"
-$env:ORACLE_PASSWORD="SUA_SENHA"
-```
-
----
-
-### 4. Compilar o projeto
-
-Na raiz do projeto:
-
-```powershell
-$files = Get-ChildItem -Recurse -Path src -Filter *.java | ForEach-Object { $_.FullName }
-```
-
-Depois:
-
-```powershell
-javac -cp "lib/ojdbc17.jar" -d bin $files
-```
-
----
-
-### 5. Executar a aplicação
-
-```powershell
-java -cp "bin;lib/ojdbc17.jar" br.com.motivaverde.main.Main
-```
+Turma: **2CCPX**
 
 ---
 
 ## Tecnologias utilizadas
 
+- Java 17
+- Spring Boot 4.1.1
+- Spring Web MVC
+- Spring Data JPA
+- Hibernate
+- Bean Validation
+- Maven
+- Oracle Database
+- Oracle JDBC `ojdbc17`
+- H2 Database para testes
+- JUnit 5
+- MockMvc
+
+---
+
+## Arquitetura
+
+O projeto segue uma arquitetura em camadas:
+
 ```text
-Java 21
-Oracle Database
-JDBC
-Oracle JDBC Driver
-SQL
-Git
-GitHub
-Visual Studio Code
-Oracle SQL Developer for VS Code
+Controller
+    ↓
+Service
+    ↓
+Repository
+    ↓
+Oracle
 ```
 
----
-
-## Segurança
-
-As credenciais do Oracle não são armazenadas diretamente dentro das classes Java.
-
-O projeto utiliza variáveis de ambiente:
+Estrutura principal:
 
 ```text
-ORACLE_USER
-ORACLE_PASSWORD
-```
-
-Dessa forma, informações sensíveis não precisam ser publicadas no repositório do GitHub.
-
----
-
-## Conclusão
-
-A Sprint 3 evolui o Motiva Verde adicionando uma camada completa de persistência de dados.
-
-O sistema passa a integrar:
-
-```text
-Orientação a Objetos
-        +
-       JDBC
-        +
-     Padrão DAO
-        +
- Oracle Database
-        +
-Persistência de Relatórios
-```
-
-Com isso, equipes, trechos, intervenções e relatórios deixam de existir apenas durante a execução da aplicação e passam a ser armazenados e consultados através do banco de dados Oracle.## Sobre o projeto
-
-O Motiva Verde é uma solução voltada ao gerenciamento e à priorização de intervenções de manutenção da vegetação em trechos rodoviários.
-
-O sistema utiliza informações como:
-
-- quilômetro do trecho;
-- altura da vegetação;
-- condição de crescimento;
-- equipe responsável;
-- monitoramento por sensores IoT;
-- intervenções operacionais;
-- prioridade da intervenção.
-
-As prioridades utilizadas pelo sistema são:
-
-- `BAIXA`
-- `MODERADA`
-- `ALTA`
-- `URGENTE`
-
----
-
-## Novidades da Sprint 3
-
-Nesta Sprint foram implementados:
-
-- Persistência de dados com Oracle Database;
-- Conexão com banco utilizando JDBC;
-- Uso do Oracle JDBC Driver (`ojdbc17.jar`);
-- Padrão DAO para acesso aos dados;
-- CRUD completo das principais entidades;
-- Scripts SQL para criação das tabelas;
-- Script SQL para carga de dados de teste;
-- Persistência do histórico de relatórios;
-- Integração entre o Motor de Prioridade e o banco de dados;
-- Carregamento dos trechos diretamente do Oracle;
-- Uso de `PreparedStatement`;
-- Uso de `Record` para representar registros retornados pelo banco;
-- Tratamento de exceções relacionadas ao banco de dados.
-
----
-
-## Estrutura do projeto
-
-```text
-MOTIVAVERDE_POO_SPRINT03/
-├── lib/
-│   └── ojdbc17.jar
+src/
+├── main/
+│   ├── java/
+│   │   └── br/com/motivaverde/
+│   │       ├── MotivaverdeApplication.java
+│   │       ├── controller/
+│   │       ├── dto/
+│   │       ├── exception/
+│   │       ├── model/
+│   │       ├── repository/
+│   │       └── service/
+│   │
+│   └── resources/
+│       └── application.properties
 │
-├── sql/
-│   ├── script-criacao.sql
-│   └── script-dados.sql
-│
-├── src/
-│   └── br/com/motivaverde/
-│       ├── dao/
-│       │   ├── EquipeManutencaoDAO.java
-│       │   ├── IntervencaoOperacionalDAO.java
-│       │   ├── RelatorioPrioridadeDAO.java
-│       │   └── TrechoRodoviaDAO.java
-│       │
-│       ├── db/
-│       │   └── ConexaoBD.java
-│       │
-│       ├── interfaces/
-│       │
-│       ├── intervencao/
-│       │
-│       ├── main/
-│       │   └── Main.java
-│       │
-│       ├── model/
-│       │
-│       └── service/
-│           ├── GeradorRelatorio.java
-│           └── MotorPrioridade.java
-│
-├── .gitignore
-└── README.md
+└── test/
+    ├── java/
+    │   └── br/com/motivaverde/
+    │       └── MotivaverdeApplicationTests.java
+    │
+    └── resources/
+        └── application-test.properties
 ```
+
+### Responsabilidade das camadas
+
+**Model**
+
+Contém as entidades JPA responsáveis pelo mapeamento das tabelas do banco Oracle.
+
+**Repository**
+
+Interfaces que estendem `JpaRepository`. O Spring Data gera automaticamente a implementação das operações de persistência.
+
+**Service**
+
+Contém as regras de negócio, validações e o motor de prioridade.
+
+**Controller**
+
+Expõe os endpoints HTTP da API REST.
+
+**DTO**
+
+Define os contratos de entrada e saída da API, evitando expor diretamente as entidades JPA nos principais recursos.
+
+**Exception**
+
+Centraliza as exceções e o tratamento global dos erros da API.
 
 ---
 
-## Banco de dados
+# Configuração do banco
 
-O projeto utiliza **Oracle Database**.
-
-### Configuração
+A aplicação utiliza o banco Oracle da FIAP:
 
 ```text
-Host: oracle.fiap.com.br
-Porta: 1521
-SID: ORCL
+oracle.fiap.com.br:1521:ORCL
 ```
 
-As credenciais não são armazenadas diretamente no código-fonte.
+As credenciais não são armazenadas no código-fonte.
 
-O projeto utiliza as seguintes variáveis de ambiente:
+O arquivo:
 
 ```text
-ORACLE_USER
-ORACLE_PASSWORD
+src/main/resources/application.properties
 ```
 
-### Configuração das variáveis no PowerShell
+utiliza variáveis de ambiente:
+
+```properties
+spring.datasource.url=jdbc:oracle:thin:@oracle.fiap.com.br:1521:ORCL
+spring.datasource.username=${DB_USERNAME}
+spring.datasource.password=${DB_PASSWORD}
+spring.datasource.driver-class-name=oracle.jdbc.OracleDriver
+
+spring.jpa.hibernate.ddl-auto=none
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+
+server.port=8080
+```
+
+Antes de executar a aplicação, configure:
+
+### PowerShell
 
 ```powershell
-$env:ORACLE_USER="SEU_USUARIO"
-$env:ORACLE_PASSWORD="SUA_SENHA"
+$env:DB_USERNAME="SEU_USUARIO"
+$env:DB_PASSWORD="SUA_SENHA"
+```
+
+Nenhuma senha real deve ser enviada ao GitHub.
+
+---
+
+# Sequences Oracle
+
+Para atender à estratégia de geração de IDs utilizada pelo JPA, foram criadas as seguintes sequences:
+
+```text
+SEQ_EQUIPE_MANUTENCAO
+SEQ_TRECHO_RODOVIA
+SEQ_INTERVENCAO_OPERACIONAL
+SEQ_RELATORIO_PRIORIDADE
+```
+
+As entidades utilizam:
+
+```java
+@GeneratedValue
+@SequenceGenerator
+```
+
+para obtenção automática dos identificadores.
+
+---
+
+# Como executar
+
+## 1. Verificar o Java
+
+```bash
+java -version
+```
+
+O projeto utiliza:
+
+```text
+Java 17
+```
+
+## 2. Compilar
+
+Windows:
+
+```powershell
+./mvnw clean package -DskipTests
+```
+
+Resultado esperado:
+
+```text
+BUILD SUCCESS
+```
+
+## 3. Executar a API
+
+```powershell
+./mvnw spring-boot:run
+```
+
+A API ficará disponível em:
+
+```text
+http://localhost:8080
 ```
 
 ---
 
-## Conexão JDBC
+# Endpoints
 
-A conexão com o Oracle é realizada pela classe:
+## Equipes de manutenção
 
-```text
-ConexaoBD.java
-```
-
-O projeto utiliza o driver:
-
-```text
-ojdbc17.jar
-```
-
-armazenado dentro da pasta:
-
-```text
-lib/
-```
-
-A classe `ConexaoBD` utiliza o padrão Singleton para manter uma instância centralizada da conexão com o banco.
+| Método | Endpoint | Descrição | Sucesso |
+|---|---|---|---|
+| GET | `/api/equipes` | Lista todas as equipes | 200 |
+| GET | `/api/equipes/{id}` | Busca uma equipe por ID | 200 / 404 |
+| POST | `/api/equipes` | Cadastra uma equipe | 201 / 400 |
+| PUT | `/api/equipes/{id}` | Atualiza uma equipe | 200 / 404 |
+| DELETE | `/api/equipes/{id}` | Remove uma equipe | 204 / 404 |
+| GET | `/api/equipes/especialidade?valor=...` | Busca por especialidade | 200 |
 
 ---
 
-## Scripts SQL
+## Trechos rodoviários
 
-### script-criacao.sql
-
-O arquivo:
-
-```text
-sql/script-criacao.sql
-```
-
-é responsável pela criação das tabelas utilizadas pela aplicação:
-
-```text
-TB_EQUIPE_MANUTENCAO
-TB_TRECHO_RODOVIA
-TB_INTERVENCAO_OPERACIONAL
-TB_RELATORIO_PRIORIDADE
-```
-
-As tabelas utilizam:
-
-- chaves primárias;
-- chaves estrangeiras;
-- constraints;
-- campos `IDENTITY`;
-- valores padrão;
-- relacionamentos entre as entidades.
-
-### script-dados.sql
-
-O arquivo:
-
-```text
-sql/script-dados.sql
-```
-
-é responsável pela carga de dados utilizados para testes da aplicação.
-
-O script também realiza a limpeza dos dados de teste anteriores antes de inserir uma nova carga, evitando duplicidades.
+| Método | Endpoint | Descrição | Sucesso |
+|---|---|---|---|
+| GET | `/api/trechos` | Lista todos os trechos | 200 |
+| GET | `/api/trechos/{id}` | Busca trecho por ID | 200 / 404 |
+| POST | `/api/trechos` | Cadastra um trecho | 201 / 400 / 404 |
+| PUT | `/api/trechos/{id}` | Atualiza um trecho | 200 / 404 |
+| DELETE | `/api/trechos/{id}` | Remove um trecho | 204 / 404 |
+| GET | `/api/trechos/altura-minima?valor=25` | Filtra por altura mínima da vegetação | 200 |
+| GET | `/api/trechos/tipo?valor=MONITORADO` | Filtra por tipo | 200 |
 
 ---
 
-## Tabelas
+## Intervenções operacionais
 
-### TB_EQUIPE_MANUTENCAO
+| Método | Endpoint | Descrição | Sucesso |
+|---|---|---|---|
+| GET | `/api/intervencoes` | Lista todas as intervenções | 200 |
+| GET | `/api/intervencoes/{id}` | Busca intervenção por ID | 200 / 404 |
+| POST | `/api/intervencoes` | Registra uma intervenção | 201 / 400 / 404 |
+| PUT | `/api/intervencoes/{id}` | Atualiza uma intervenção | 200 / 404 |
+| DELETE | `/api/intervencoes/{id}` | Remove uma intervenção | 204 / 404 |
+| GET | `/api/intervencoes/tipo?valor=ROCADA_MECANIZADA` | Filtra pelo tipo | 200 |
+| GET | `/api/intervencoes/periodo?inicio=2026-09-01&fim=2026-09-30` | Consulta por período | 200 |
 
-Armazena as equipes responsáveis pelas atividades de manutenção.
+---
 
-Principais informações:
+## Relatórios de prioridade
 
-```text
-ID_EQUIPE
-NOME
-ESPECIALIDADE
+| Método | Endpoint | Descrição | Sucesso |
+|---|---|---|---|
+| POST | `/api/relatorios` | Gera e persiste um novo relatório | 201 |
+| GET | `/api/relatorios` | Lista o histórico de relatórios | 200 |
+| GET | `/api/relatorios/periodo?inicio=2026-09-01&fim=2026-09-30` | Consulta relatórios por período | 200 / 400 |
+
+---
+
+# Exemplos cURL
+
+## Listar equipes
+
+```bash
+curl -X GET http://localhost:8080/api/equipes
 ```
 
 ---
 
-### TB_TRECHO_RODOVIA
+## Criar equipe
 
-Armazena os trechos monitorados pelo sistema.
-
-Principais informações:
-
-```text
-ID_TRECHO
-QUILOMETRO
-ALTURA_VEGETACAO
-CONDICAO_CRESCIMENTO
-ID_EQUIPE
-TIPO_TRECHO
-CODIGO_SENSOR
+```bash
+curl -X POST http://localhost:8080/api/equipes \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nome": "Equipe Norte",
+    "especialidade": "Rocada Mecanizada"
+  }'
 ```
 
-O campo `TIPO_TRECHO` permite diferenciar trechos comuns de trechos monitorados via IoT.
+---
+
+## Buscar equipe
+
+```bash
+curl -X GET http://localhost:8080/api/equipes/13
+```
+
+---
+
+## Atualizar equipe
+
+```bash
+curl -X PUT http://localhost:8080/api/equipes/13 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nome": "Equipe Norte Atualizada",
+    "especialidade": "Rocada Mecanizada"
+  }'
+```
+
+---
+
+## Excluir equipe
+
+```bash
+curl -X DELETE http://localhost:8080/api/equipes/13
+```
+
+---
+
+## Criar trecho
+
+O `equipeId` precisa corresponder a uma equipe existente.
+
+```bash
+curl -X POST http://localhost:8080/api/trechos \
+  -H "Content-Type: application/json" \
+  -d '{
+    "quilometro": 72.5,
+    "alturaVegetacao": 28.0,
+    "condicaoCrescimento": "ALTO_CRESCIMENTO",
+    "equipeId": 13,
+    "tipoTrecho": "MONITORADO",
+    "codigoSensor": "SENSOR-SPRINT4-001"
+  }'
+```
+
+Exemplo de resposta:
+
+```json
+{
+  "id": 1000,
+  "quilometro": 72.5,
+  "alturaVegetacao": 28.0,
+  "condicaoCrescimento": "ALTO_CRESCIMENTO",
+  "equipeId": 13,
+  "equipeNome": "Equipe Norte",
+  "tipoTrecho": "MONITORADO",
+  "codigoSensor": "SENSOR-SPRINT4-001"
+}
+```
+
+---
+
+## Buscar trechos com vegetação a partir de 25 cm
+
+```bash
+curl -X GET "http://localhost:8080/api/trechos/altura-minima?valor=25"
+```
+
+Este endpoint utiliza uma derived query do Spring Data:
+
+```java
+findByAlturaVegetacaoGreaterThanEqual(Double minimo)
+```
+
+---
+
+## Criar intervenção
+
+```bash
+curl -X POST http://localhost:8080/api/intervencoes \
+  -H "Content-Type: application/json" \
+  -d '{
+    "trechoId": 1000,
+    "tipoIntervencao": "ROCADA_MECANIZADA",
+    "dataExecucao": "2026-09-28",
+    "alturaAntes": 31.0,
+    "alturaDepois": 10.0
+  }'
+```
+
+Exemplo de resposta:
+
+```json
+{
+  "id": 1000,
+  "trechoId": 1000,
+  "quilometroTrecho": 72.5,
+  "tipoIntervencao": "ROCADA_MECANIZADA",
+  "dataExecucao": "2026-09-28",
+  "alturaAntes": 31.0,
+  "alturaDepois": 10.0
+}
+```
+
+---
+
+## Consultar intervenções por período
+
+```bash
+curl -X GET "http://localhost:8080/api/intervencoes/periodo?inicio=2026-09-01&fim=2026-09-30"
+```
+
+---
+
+## Gerar relatório de prioridade
+
+```bash
+curl -X POST http://localhost:8080/api/relatorios
+```
+
+O endpoint consulta todos os trechos atuais, aplica o motor de prioridade e persiste o resultado no histórico.
+
+---
+
+## Consultar histórico
+
+```bash
+curl -X GET http://localhost:8080/api/relatorios
+```
+
+---
+
+## Consultar relatórios por período
+
+```bash
+curl -X GET "http://localhost:8080/api/relatorios/periodo?inicio=2026-09-01&fim=2026-09-30"
+```
+
+---
+
+# Motor de prioridade
+
+A classificação utilizada no projeto foi preservada das Sprints anteriores:
+
+| Altura da vegetação | Prioridade |
+|---|---|
+| Até 15 cm | BAIXA |
+| Acima de 15 cm e abaixo de 21 cm | MODERADA |
+| De 21 cm até abaixo de 30 cm | ALTA |
+| A partir de 30 cm | URGENTE |
+
+A regra está implementada em:
+
+```text
+MotorPrioridadeService
+```
+
+A lógica de negócio não fica no Controller.
+
+---
+
+# Derived Queries
+
+O projeto demonstra o recurso de derived queries do Spring Data.
 
 Exemplos:
 
+```java
+List<TrechoRodovia> findByAlturaVegetacaoGreaterThanEqual(Double minimo);
+```
+
+```java
+List<TrechoRodovia> findByTipoTrecho(TipoTrecho tipoTrecho);
+```
+
+```java
+List<IntervencaoOperacional> findByTipoIntervencao(
+        TipoIntervencao tipoIntervencao
+);
+```
+
+```java
+List<IntervencaoOperacional> findByDataExecucaoBetween(
+        LocalDate inicio,
+        LocalDate fim
+);
+```
+
+```java
+List<RelatorioPrioridade> findByDataGeracaoBetween(
+        LocalDateTime inicio,
+        LocalDateTime fim
+);
+```
+
+O SQL dessas operações não é escrito manualmente pelo projeto. Ele é gerado pelo Spring Data JPA a partir dos nomes dos métodos.
+
+---
+
+# Validações
+
+A API utiliza Bean Validation com anotações como:
+
 ```text
-RODOVIA
-MONITORADO
+@NotNull
+@NotBlank
+@PositiveOrZero
+@Size
+@Valid
+```
+
+Também existem regras de negócio implementadas na camada `Service`.
+
+Exemplo:
+
+```text
+alturaDepois <= alturaAntes
+```
+
+Uma intervenção em que a altura após a execução seja maior que a altura anterior é rejeitada com:
+
+```text
+HTTP 400 Bad Request
 ```
 
 ---
 
-### TB_INTERVENCAO_OPERACIONAL
+# Tratamento global de erros
 
-Armazena o histórico das intervenções realizadas.
-
-Os tipos de intervenção utilizados pelo sistema são:
+A aplicação possui:
 
 ```text
-ROCADA_MECANIZADA
-PULVERIZACAO
+@RestControllerAdvice
 ```
 
-Também são armazenadas informações como:
+para centralizar o tratamento de exceções.
+
+São tratados, entre outros casos:
 
 ```text
-DATA_EXECUCAO
-ALTURA_ANTES
-ALTURA_DEPOIS
+400 Bad Request
+404 Not Found
+erros de Bean Validation
+JSON inválido
+violações das regras de negócio
 ```
 
----
+Exemplo de estrutura de erro:
 
-### TB_RELATORIO_PRIORIDADE
-
-Armazena o histórico dos relatórios gerados pelo sistema.
-
-Cada relatório registra a quantidade de trechos classificados como:
-
-```text
-BAIXA
-MODERADA
-ALTA
-URGENTE
-```
-
-Também é armazenado um resumo da análise.
-
----
-
-## Padrão DAO
-
-A Sprint 3 utiliza o padrão **DAO - Data Access Object** para separar a lógica de persistência da lógica da aplicação.
-
-Foram implementados os seguintes DAOs:
-
-```text
-EquipeManutencaoDAO
-TrechoRodoviaDAO
-IntervencaoOperacionalDAO
-RelatorioPrioridadeDAO
-```
-
-Todos seguem o padrão CRUD solicitado.
-
----
-
-## EquipeManutencaoDAO
-
-Responsável pelas operações relacionadas às equipes de manutenção.
-
-Métodos implementados:
-
-```text
-inserir()
-buscarPorId()
-listarTodas()
-atualizar()
-deletar()
+```json
+{
+  "timestamp": "2026-09-28T13:00:00",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "A altura após a intervenção não pode ser maior que a altura anterior",
+  "path": "/api/intervencoes",
+  "campos": null
+}
 ```
 
 ---
 
-## TrechoRodoviaDAO
+# Testes automatizados
 
-Responsável pela persistência dos trechos rodoviários.
-
-Métodos implementados:
+Os testes utilizam:
 
 ```text
-inserir()
-buscarPorId()
-listarTodas()
-atualizar()
-deletar()
+@SpringBootTest
+MockMvc
+JUnit 5
+H2
 ```
 
-O DAO também suporta os dados específicos de um trecho monitorado, como:
+O banco H2 é utilizado somente durante os testes, impedindo que os testes automatizados alterem os dados do Oracle.
 
-```text
-TIPO_TRECHO
-CODIGO_SENSOR
+Executar:
+
+```bash
+./mvnw test
 ```
 
----
-
-## IntervencaoOperacionalDAO
-
-Responsável pela persistência das intervenções operacionais.
-
-Métodos implementados:
+Resultado obtido:
 
 ```text
-inserir()
-buscarPorId()
-listarTodas()
-atualizar()
-deletar()
+Tests run: 5
+Failures: 0
+Errors: 0
+Skipped: 0
+
+BUILD SUCCESS
 ```
 
-As intervenções utilizadas no projeto são:
+Os testes verificam:
 
 ```text
-RocadaMecanizada
-Pulverizacao
+Inicialização do contexto Spring
+GET retornando HTTP 200
+POST retornando HTTP 201
+Bean Validation retornando HTTP 400
+Recurso inexistente retornando HTTP 404
 ```
 
 ---
 
-## RelatorioPrioridadeDAO
+# Migração JDBC para JPA
 
-Responsável pelo histórico dos relatórios de prioridade.
-
-Métodos implementados:
+Na Sprint 3, a persistência era feita manualmente com JDBC:
 
 ```text
-inserir()
-buscarPorId()
-listarTodas()
-atualizar()
-deletar()
-salvarRelatorio()
+Connection
+PreparedStatement
+ResultSet
+SQL escrito manualmente
+DAOs
 ```
 
-O método:
+Na Sprint 4, essa responsabilidade foi substituída por:
 
 ```text
-salvarRelatorio()
+@Entity
+JpaRepository
+Spring Data JPA
+Hibernate
 ```
-
-é utilizado pelo `GeradorRelatorio` para persistir automaticamente o resultado de uma análise.
-
----
-
-## PreparedStatement
-
-Todas as operações que recebem parâmetros utilizam `PreparedStatement`.
 
 Exemplo conceitual:
 
+### Sprint 3
+
 ```java
-String sql = "SELECT * FROM TB_EQUIPE_MANUTENCAO WHERE ID_EQUIPE = ?";
+PreparedStatement stmt =
+        connection.prepareStatement(
+                "INSERT INTO ..."
+        );
 
-PreparedStatement stmt = conn.prepareStatement(sql);
-
-stmt.setLong(1, id);
+stmt.executeUpdate();
 ```
 
-Dessa forma, os valores não são concatenados diretamente às consultas SQL.
+### Sprint 4
+
+```java
+repository.save(entidade);
+```
+
+Não existem `Connection`, `PreparedStatement` ou `ResultSet` na implementação da Sprint 4.
 
 ---
 
-## Records
+# Perguntas de reflexão
 
-Os DAOs utilizam `Record` para representar registros retornados pelo banco de dados.
+## 1. Por que o Repository é uma interface e não uma classe? Quem escreve a implementação e quando?
 
-Exemplos:
+O Repository é uma interface porque utilizamos o Spring Data JPA. Nós declaramos apenas o contrato de acesso aos dados, estendendo interfaces como `JpaRepository`.
 
-```text
-EquipeRegistro
-TrechoRegistro
-IntervencaoRegistro
-RelatorioRegistro
+A implementação concreta não precisa ser escrita manualmente pela equipe. O próprio Spring cria essa implementação em tempo de execução durante a inicialização da aplicação.
+
+Por isso conseguimos utilizar métodos como:
+
+```java
+save()
+findAll()
+findById()
+deleteById()
 ```
 
-Esses objetos representam os dados persistidos no Oracle durante as operações dos DAOs.
+sem criar manualmente uma classe DAO para implementá-los.
 
 ---
 
-## Motor de Prioridade
+## 2. O pattern DAO da Sprint 3 morreu na migração ou apenas mudou de forma?
 
-A classe:
+O conceito não morreu. Ele mudou de forma.
 
-```text
-MotorPrioridade.java
-```
+Na Sprint 3, criamos manualmente classes DAO responsáveis por conversar com o banco usando JDBC, conexão, SQL e `PreparedStatement`.
 
-mantém a lógica de análise desenvolvida nas Sprints anteriores.
+Na Sprint 4, essa responsabilidade continua existindo, mas é abstraída pelo Spring Data JPA através dos Repositories.
 
-O motor analisa cada trecho e determina sua prioridade:
-
-```text
-BAIXA
-MODERADA
-ALTA
-URGENTE
-```
-
-Trechos que implementam monitoramento via IoT podem atualizar seus dados antes da classificação.
-
-Dependendo da situação, o sistema também pode indicar intervenções como:
-
-```text
-Roçada Mecanizada
-Pulverização
-```
+Assim, o Repository exerce o mesmo papel arquitetural de acesso aos dados, porém grande parte da implementação é gerada automaticamente pelo framework.
 
 ---
 
-## Gerador de Relatório
+## 3. Por que a validação de `nivelVegetacao >= 0` deve ficar no Service e não no Controller?
 
-A classe:
+O Controller deve ser responsável principalmente pelo protocolo HTTP: receber requisições, interpretar parâmetros e devolver respostas.
 
-```text
-GeradorRelatorio.java
-```
+A regra que determina se um valor é válido para o domínio pertence à lógica de negócio.
 
-é responsável por integrar o Motor de Prioridade ao banco de dados.
+Ao manter essa regra no Service, ela pode ser reutilizada independentemente de onde a chamada venha, além de manter uma separação clara entre a camada HTTP e as regras da aplicação.
 
-O fluxo ocorre da seguinte maneira:
-
-```text
-Trechos
-   ↓
-MotorPrioridade
-   ↓
-Classificação das prioridades
-   ↓
-ResultadoPrioridades
-   ↓
-GeradorRelatorio
-   ↓
-RelatorioPrioridadeDAO
-   ↓
-Oracle Database
-```
-
-Dessa forma, o relatório continua sendo apresentado no console, mas também passa a possuir um histórico persistente no banco de dados.
+O projeto também utiliza Bean Validation nos DTOs para validar o contrato de entrada, enquanto as regras de negócio permanecem na camada Service.
 
 ---
 
-## Carregamento dos trechos
+## 4. No JDBC puro escrevíamos SQL. Onde está o SQL do `findByTipo()`? Quem o gerou?
 
-Nas Sprints anteriores, os trechos eram instanciados diretamente dentro do código Java.
+O SQL não está escrito diretamente no código do projeto.
 
-Na Sprint 3, eles passam a ser carregados através do Oracle.
+Métodos como:
 
-O fluxo é:
-
-```text
-Oracle Database
-       ↓
-TrechoRodoviaDAO
-       ↓
-TrechoRegistro
-       ↓
-TrechoRodovia / TrechoMonitorado
-       ↓
-MotorPrioridade
+```java
+findByTipoTrecho(...)
 ```
 
-Assim, o sistema utiliza dados persistidos em vez de depender apenas de objetos criados diretamente no código.
+ou:
+
+```java
+findByTipoIntervencao(...)
+```
+
+seguem a convenção de nomes do Spring Data.
+
+O framework interpreta o nome do método, analisa a entidade e seus atributos e gera automaticamente a consulta necessária através do JPA/Hibernate.
+
+Assim, a aplicação consegue realizar a consulta sem SQL escrito manualmente.
 
 ---
 
-## Main
+# Boas práticas implementadas
 
-A classe principal está localizada em:
-
-```text
-src/br/com/motivaverde/main/Main.java
-```
-
-Durante a execução, o sistema demonstra:
-
-1. conexão com o Oracle;
-2. CRUD de equipes de manutenção;
-3. CRUD de trechos rodoviários;
-4. CRUD de intervenções operacionais;
-5. CRUD de relatórios;
-6. carregamento dos trechos persistidos;
-7. geração do relatório de prioridade;
-8. persistência automática do relatório;
-9. consulta ao histórico;
-10. encerramento da conexão com o banco.
-
-Os registros temporários utilizados na demonstração dos CRUDs são removidos ao final dos testes.
-
----
-
-## Como executar
-
-### 1. Criar as tabelas
-
-Execute no Oracle:
+O projeto utiliza:
 
 ```text
-sql/script-criacao.sql
+Arquitetura em camadas
+Spring Data JPA
+DTOs de entrada e saída
+Bean Validation
+Tratamento global de erros
+Derived Queries
+Variáveis de ambiente para credenciais
+Testes automatizados com MockMvc
+Banco H2 isolado para testes
+Commits incrementais
+.gitignore
 ```
 
 ---
 
-### 2. Carregar os dados de teste
+# Segurança
 
-Depois execute:
+Credenciais do Oracle não são versionadas.
 
-```text
-sql/script-dados.sql
-```
-
----
-
-### 3. Configurar as credenciais
-
-No PowerShell:
-
-```powershell
-$env:ORACLE_USER="SEU_USUARIO"
-$env:ORACLE_PASSWORD="SUA_SENHA"
-```
-
----
-
-### 4. Compilar o projeto
-
-Na raiz do projeto:
-
-```powershell
-$files = Get-ChildItem -Recurse -Path src -Filter *.java | ForEach-Object { $_.FullName }
-```
-
-Depois:
-
-```powershell
-javac -cp "lib/ojdbc17.jar" -d bin $files
-```
-
----
-
-### 5. Executar a aplicação
-
-```powershell
-java -cp "bin;lib/ojdbc17.jar" br.com.motivaverde.main.Main
-```
-
----
-
-## Tecnologias utilizadas
+O projeto utiliza:
 
 ```text
-Java 21
-Oracle Database
-JDBC
-Oracle JDBC Driver
-SQL
-Git
-GitHub
-Visual Studio Code
-Oracle SQL Developer for VS Code
+${DB_USERNAME}
+${DB_PASSWORD}
 ```
+
+As credenciais devem ser fornecidas localmente através de variáveis de ambiente.
+
+Arquivos de build como:
+
+```text
+target/
+```
+
+também não são enviados ao repositório.
 
 ---
 
-## Segurança
+# Status da Sprint
 
-As credenciais do Oracle não são armazenadas diretamente dentro das classes Java.
-
-O projeto utiliza variáveis de ambiente:
+Funcionalidades implementadas:
 
 ```text
-ORACLE_USER
-ORACLE_PASSWORD
+CRUD REST de Equipes
+CRUD REST de Trechos
+CRUD REST de Intervenções
+Motor de prioridade
+Geração e persistência de relatórios
+Histórico de relatórios
+Consulta de relatórios por período
+Derived Queries
+Bean Validation
+DTOs
+Tratamento global de erros
+Testes automatizados
+Persistência Oracle com Spring Data JPA
 ```
 
-Dessa forma, informações sensíveis não precisam ser publicadas no repositório do GitHub.
-
----
-
-## Conclusão
-
-A Sprint 3 evolui o Motiva Verde adicionando uma camada completa de persistência de dados.
-
-O sistema passa a integrar:
-
-```text
-Orientação a Objetos
-        +
-       JDBC
-        +
-     Padrão DAO
-        +
- Oracle Database
-        +
-Persistência de Relatórios
-```
-
-Com isso, equipes, trechos, intervenções e relatórios deixam de existir apenas durante a execução da aplicação e passam a ser armazenados e consultados através do banco de dados Oracle.
+Projeto desenvolvido para o Challenge Motiva Verde — FIAP.
