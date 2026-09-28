@@ -6,6 +6,7 @@ import br.com.motivaverde.model.TrechoRodovia;
 import br.com.motivaverde.repository.RelatorioPrioridadeRepository;
 import br.com.motivaverde.repository.TrechoRodoviaRepository;
 import org.springframework.stereotype.Service;
+import br.com.motivaverde.exception.RegraNegocioException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -79,9 +80,9 @@ public class RelatorioPrioridadeService {
     ) {
 
         if (inicio.isAfter(fim)) {
-            throw new IllegalArgumentException(
-                    "A data inicial não pode ser posterior à data final"
-            );
+            throw new RegraNegocioException(
+        "A data inicial não pode ser posterior à data final"
+);
         }
 
         LocalDateTime inicioPeriodo =

@@ -7,6 +7,8 @@ import br.com.motivaverde.model.TrechoRodovia;
 import br.com.motivaverde.repository.IntervencaoOperacionalRepository;
 import br.com.motivaverde.repository.TrechoRodoviaRepository;
 import org.springframework.stereotype.Service;
+import br.com.motivaverde.exception.RecursoNaoEncontradoException;
+import br.com.motivaverde.exception.RegraNegocioException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -91,11 +93,11 @@ public class IntervencaoOperacionalService {
 
         TrechoRodovia trecho = trechoRepository
                 .findById(request.getTrechoId())
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Trecho não encontrado"
-                        )
-                );
+               .orElseThrow(() ->
+        new RecursoNaoEncontradoException(
+                "Trecho não encontrado com ID " + request.getTrechoId()
+        )
+);
 
         intervencao.setTrecho(trecho);
         intervencao.setTipoIntervencao(
@@ -116,9 +118,9 @@ public class IntervencaoOperacionalService {
             IntervencaoOperacionalRequest request
     ) {
         if (request.getAlturaDepois() > request.getAlturaAntes()) {
-            throw new IllegalArgumentException(
-                    "A altura após a intervenção não pode ser maior que a altura anterior"
-            );
+           throw new RegraNegocioException(
+        "A altura após a intervenção não pode ser maior que a altura anterior"
+);
         }
     }
 }

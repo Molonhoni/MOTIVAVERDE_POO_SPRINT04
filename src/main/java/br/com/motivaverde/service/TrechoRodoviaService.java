@@ -7,6 +7,7 @@ import br.com.motivaverde.model.TrechoRodovia;
 import br.com.motivaverde.repository.EquipeManutencaoRepository;
 import br.com.motivaverde.repository.TrechoRodoviaRepository;
 import org.springframework.stereotype.Service;
+import br.com.motivaverde.exception.RecursoNaoEncontradoException;
 
 import java.util.List;
 import java.util.Optional;
@@ -97,11 +98,11 @@ public class TrechoRodoviaService {
 
         EquipeManutencao equipe = equipeRepository
                 .findById(request.getEquipeId())
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Equipe não encontrada"
-                        )
-                );
+               .orElseThrow(() ->
+        new RecursoNaoEncontradoException(
+                "Equipe não encontrada com ID " + request.getEquipeId()
+        )
+);
 
         trecho.setEquipeResponsavel(equipe);
     }

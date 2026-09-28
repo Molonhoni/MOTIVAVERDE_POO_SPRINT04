@@ -3,6 +3,7 @@ package br.com.motivaverde.service;
 import br.com.motivaverde.model.PrioridadeIntervencao;
 import br.com.motivaverde.model.TrechoRodovia;
 import org.springframework.stereotype.Service;
+import br.com.motivaverde.exception.RegraNegocioException;
 
 @Service
 public class MotorPrioridadeService {
@@ -18,9 +19,9 @@ public class MotorPrioridadeService {
     ) {
 
         if (alturaVegetacao == null || alturaVegetacao < 0) {
-            throw new IllegalArgumentException(
-                    "A altura da vegetação deve ser maior ou igual a zero"
-            );
+            throw new RegraNegocioException(
+        "A altura da vegetação deve ser maior ou igual a zero"
+);
         }
 
         if (alturaVegetacao >= 30) {
