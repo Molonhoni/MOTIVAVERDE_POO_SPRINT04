@@ -1,8 +1,8 @@
 package br.com.motivaverde.controller;
 
 import br.com.motivaverde.dto.TrechoRodoviaRequest;
+import br.com.motivaverde.dto.TrechoRodoviaResponse;
 import br.com.motivaverde.model.TipoTrecho;
-import br.com.motivaverde.model.TrechoRodovia;
 import br.com.motivaverde.service.TrechoRodoviaService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -24,15 +24,16 @@ public class TrechoRodoviaController {
     }
 
     @GetMapping
-    public ResponseEntity<List<TrechoRodovia>> listarTodos() {
-        return ResponseEntity.ok(service.listarTodos());
+    public ResponseEntity<List<TrechoRodoviaResponse>> listarTodos() {
+        return ResponseEntity.ok(
+                service.listarTodos()
+        );
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TrechoRodovia> buscarPorId(
+    public ResponseEntity<TrechoRodoviaResponse> buscarPorId(
             @PathVariable Long id
     ) {
-
         return service.buscarPorId(id)
                 .map(ResponseEntity::ok)
                 .orElseGet(() ->
@@ -41,11 +42,12 @@ public class TrechoRodoviaController {
     }
 
     @PostMapping
-    public ResponseEntity<TrechoRodovia> criar(
+    public ResponseEntity<TrechoRodoviaResponse> criar(
             @Valid @RequestBody TrechoRodoviaRequest request
     ) {
 
-        TrechoRodovia criado = service.criar(request);
+        TrechoRodoviaResponse criado =
+                service.criar(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -53,7 +55,7 @@ public class TrechoRodoviaController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<TrechoRodovia> atualizar(
+    public ResponseEntity<TrechoRodoviaResponse> atualizar(
             @PathVariable Long id,
             @Valid @RequestBody TrechoRodoviaRequest request
     ) {
@@ -78,7 +80,7 @@ public class TrechoRodoviaController {
     }
 
     @GetMapping("/altura-minima")
-    public ResponseEntity<List<TrechoRodovia>>
+    public ResponseEntity<List<TrechoRodoviaResponse>>
             buscarPorAlturaMinima(
                     @RequestParam Double valor
             ) {
@@ -89,7 +91,7 @@ public class TrechoRodoviaController {
     }
 
     @GetMapping("/tipo")
-    public ResponseEntity<List<TrechoRodovia>>
+    public ResponseEntity<List<TrechoRodoviaResponse>>
             buscarPorTipo(
                     @RequestParam TipoTrecho valor
             ) {

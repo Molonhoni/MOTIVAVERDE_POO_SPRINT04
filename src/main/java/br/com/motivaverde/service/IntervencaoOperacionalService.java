@@ -1,14 +1,15 @@
 package br.com.motivaverde.service;
 
 import br.com.motivaverde.dto.IntervencaoOperacionalRequest;
+import br.com.motivaverde.dto.IntervencaoOperacionalResponse;
+import br.com.motivaverde.exception.RecursoNaoEncontradoException;
+import br.com.motivaverde.exception.RegraNegocioException;
 import br.com.motivaverde.model.IntervencaoOperacional;
 import br.com.motivaverde.model.TipoIntervencao;
 import br.com.motivaverde.model.TrechoRodovia;
 import br.com.motivaverde.repository.IntervencaoOperacionalRepository;
 import br.com.motivaverde.repository.TrechoRodoviaRepository;
 import org.springframework.stereotype.Service;
-import br.com.motivaverde.exception.RecursoNaoEncontradoException;
-import br.com.motivaverde.exception.RegraNegocioException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -28,15 +29,19 @@ public class IntervencaoOperacionalService {
         this.trechoRepository = trechoRepository;
     }
 
-    public List<IntervencaoOperacional> listarTodas() {
-        return intervencaoRepository.findAll();
+    public List<IntervencaoOperacionalResponse> listarTodas() {
+        return intervencaoRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 
-    public Optional<IntervencaoOperacional> buscarPorId(Long id) {
-        return intervencaoRepository.findById(id);
+    public Optional<IntervencaoOperacionalResponse> buscarPorId(Long id) {
+        return intervencaoRepository.findById(id)
+                .map(this::toResponse);
     }
 
-    public IntervencaoOperacional criar(
+    public IntervencaoOperacionalResponse criar(
             IntervencaoOperacionalRequest request
     ) {
         validarAlturas(request);
@@ -46,10 +51,13 @@ public class IntervencaoOperacionalService {
 
         preencherIntervencao(intervencao, request);
 
-        return intervencaoRepository.save(intervencao);
+        IntervencaoOperacional salva =
+                intervencaoRepository.save(intervencao);
+
+        return toResponse(salva);
     }
 
-    public Optional<IntervencaoOperacional> atualizar(
+    public Optional<IntervencaoOperacionalResponse> atualizar(
             Long id,
             IntervencaoOperacionalRequest request
     ) {
@@ -57,8 +65,16 @@ public class IntervencaoOperacionalService {
 
         return intervencaoRepository.findById(id)
                 .map(intervencao -> {
-                    preencherIntervencao(intervencao, request);
-                    return intervencaoRepository.save(intervencao);
+
+                    preencherIntervencao(
+                            intervencao,
+                            request
+                    );
+
+                    IntervencaoOperacional salva =
+                            intervencaoRepository.save(intervencao);
+
+                    return toResponse(salva);
                 });
     }
 
@@ -72,18 +88,25 @@ public class IntervencaoOperacionalService {
         return true;
     }
 
-    public List<IntervencaoOperacional> buscarPorTipo(
+    public List<IntervencaoOperacionalResponse> buscarPorTipo(
             TipoIntervencao tipo
     ) {
-        return intervencaoRepository.findByTipoIntervencao(tipo);
+        return intervencaoRepository
+                .findByTipoIntervencao(tipo)
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 
-    public List<IntervencaoOperacional> buscarPorPeriodo(
+    public List<IntervencaoOperacionalResponse> buscarPorPeriodo(
             LocalDate inicio,
             LocalDate fim
     ) {
         return intervencaoRepository
-                .findByDataExecucaoBetween(inicio, fim);
+                .findByDataExecucaoBetween(inicio, fim)
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     private void preencherIntervencao(
@@ -93,11 +116,12 @@ public class IntervencaoOperacionalService {
 
         TrechoRodovia trecho = trechoRepository
                 .findById(request.getTrechoId())
-               .orElseThrow(() ->
-        new RecursoNaoEncontradoException(
-                "Trecho não encontrado com ID " + request.getTrechoId()
-        )
-);
+                .orElseThrow(() ->
+                        new RecursoNaoEncontradoException(
+                                "Trecho não encontrado com ID "
+                                        + request.getTrechoId()
+                        )
+                );
 
         intervencao.setTrecho(trecho);
         intervencao.setTipoIntervencao(
@@ -117,10 +141,28 @@ public class IntervencaoOperacionalService {
     private void validarAlturas(
             IntervencaoOperacionalRequest request
     ) {
-        if (request.getAlturaDepois() > request.getAlturaAntes()) {
-           throw new RegraNegocioException(
-        "A altura após a intervenção não pode ser maior que a altura anterior"
-);
+
+        if (request.getAlturaDepois()
+                > request.getAlturaAntes()) {
+
+            throw new RegraNegocioException(
+                    "A altura após a intervenção não pode ser maior que a altura anterior"
+            );
         }
+    }
+
+    private IntervencaoOperacionalResponse toResponse(
+            IntervencaoOperacional intervencao
+    ) {
+
+        return new IntervencaoOperacionalResponse(
+                intervencao.getId(),
+                intervencao.getTrecho().getId(),
+                intervencao.getTrecho().getQuilometro(),
+                intervencao.getTipoIntervencao(),
+                intervencao.getDataExecucao(),
+                intervencao.getAlturaAntes(),
+                intervencao.getAlturaDepois()
+        );
     }
 }

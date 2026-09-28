@@ -1,7 +1,7 @@
 package br.com.motivaverde.controller;
 
 import br.com.motivaverde.dto.IntervencaoOperacionalRequest;
-import br.com.motivaverde.model.IntervencaoOperacional;
+import br.com.motivaverde.dto.IntervencaoOperacionalResponse;
 import br.com.motivaverde.model.TipoIntervencao;
 import br.com.motivaverde.service.IntervencaoOperacionalService;
 import jakarta.validation.Valid;
@@ -25,14 +25,20 @@ public class IntervencaoOperacionalController {
     }
 
     @GetMapping
-    public ResponseEntity<List<IntervencaoOperacional>> listarTodas() {
-        return ResponseEntity.ok(service.listarTodas());
+    public ResponseEntity<List<IntervencaoOperacionalResponse>>
+            listarTodas() {
+
+        return ResponseEntity.ok(
+                service.listarTodas()
+        );
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<IntervencaoOperacional> buscarPorId(
-            @PathVariable Long id
-    ) {
+    public ResponseEntity<IntervencaoOperacionalResponse>
+            buscarPorId(
+                    @PathVariable Long id
+            ) {
+
         return service.buscarPorId(id)
                 .map(ResponseEntity::ok)
                 .orElseGet(() ->
@@ -41,10 +47,15 @@ public class IntervencaoOperacionalController {
     }
 
     @PostMapping
-    public ResponseEntity<IntervencaoOperacional> criar(
-            @Valid @RequestBody IntervencaoOperacionalRequest request
-    ) {
-        IntervencaoOperacional criada = service.criar(request);
+    public ResponseEntity<IntervencaoOperacionalResponse>
+            criar(
+                    @Valid
+                    @RequestBody
+                    IntervencaoOperacionalRequest request
+            ) {
+
+        IntervencaoOperacionalResponse criada =
+                service.criar(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -52,10 +63,14 @@ public class IntervencaoOperacionalController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<IntervencaoOperacional> atualizar(
-            @PathVariable Long id,
-            @Valid @RequestBody IntervencaoOperacionalRequest request
-    ) {
+    public ResponseEntity<IntervencaoOperacionalResponse>
+            atualizar(
+                    @PathVariable Long id,
+                    @Valid
+                    @RequestBody
+                    IntervencaoOperacionalRequest request
+            ) {
+
         return service.atualizar(id, request)
                 .map(ResponseEntity::ok)
                 .orElseGet(() ->
@@ -67,6 +82,7 @@ public class IntervencaoOperacionalController {
     public ResponseEntity<Void> remover(
             @PathVariable Long id
     ) {
+
         if (!service.remover(id)) {
             return ResponseEntity.notFound().build();
         }
@@ -75,21 +91,23 @@ public class IntervencaoOperacionalController {
     }
 
     @GetMapping("/tipo")
-    public ResponseEntity<List<IntervencaoOperacional>>
+    public ResponseEntity<List<IntervencaoOperacionalResponse>>
             buscarPorTipo(
                     @RequestParam TipoIntervencao valor
             ) {
+
         return ResponseEntity.ok(
                 service.buscarPorTipo(valor)
         );
     }
 
     @GetMapping("/periodo")
-    public ResponseEntity<List<IntervencaoOperacional>>
+    public ResponseEntity<List<IntervencaoOperacionalResponse>>
             buscarPorPeriodo(
                     @RequestParam LocalDate inicio,
                     @RequestParam LocalDate fim
             ) {
+
         return ResponseEntity.ok(
                 service.buscarPorPeriodo(inicio, fim)
         );
